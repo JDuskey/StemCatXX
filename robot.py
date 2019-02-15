@@ -1,7 +1,9 @@
 import magicbot
 import wpilib
 from wpilib.drive import DifferentialDrive
+from robotpy_ext.control.button_debouncer import ButtonDebouncer
 from networktables import NetworkTables
+
 
 class MyRobot(magicbot.MagicRobot):
 
@@ -9,53 +11,42 @@ class MyRobot(magicbot.MagicRobot):
         self.leftStick = wpilib.Joystick(0)
         self.rightStick = wpilib.Joystick(1)
         self.coStick = wpilib.Joystick(2)
-        self.stagerMotor = wpilib.Victor(3)
-        self.frontshootMotor= wpilib.Victor(4)
-        self.rearshootMotor = wpilib.Victor(5)
-        self.shooterRotateMotor = wpilib.Victor(7)
-        self.shooterPivotMotor = wpilib.Victor(8)
-        self.climbMotor = wpilib.Victor(2)
-        self.elevatorMotor = wpilib.Victor(6)
+
         self.leftMotor = wpilib.Victor(0)
         self.rightMotor = wpilib.Victor(1)
+        self.climbMotor = wpilib.Victor(2)
+        self.stagerMotor = wpilib.Victor(3)
+        self.frontshootMotor = wpilib.Victor(4)
+        self.rearshootMotor = wpilib.Victor(5)
+        self.elevatorMotor = wpilib.Victor(6)
+        self.shooterTiltMotor = wpilib.Victor(7)
         self.myRobot = DifferentialDrive(self.leftMotor, self.rightMotor)
-        self.ultra = wpilib.AnalogInput(0)
-        self.data = NetworkTables.getTable("SmartDashboard")
-        self.gyro = wpilib.AnalogGyro(1)
-        self.pdp = wpilib.PowerDistributionPanel(0)
-        self.gyro.reset()
+
+        self.shifter = wpilib.DoubleSolenoid(0, 1)
+        self.trigger = ButtonDebouncer(self.rightStick, 1, period=.5)
+        self.shifter.set(1)
+
+        self.limitSwitch = wpilib.DigitalInput(9)
 
     def teleopInit(self):
-        stage_speed = self.data.putNumber("StageSpeed",0)
-        front_speed = self.data.putNumber("FrontSpeed",0)
-        rear_speed = self.data.putNumber("RearSpeed",0)
-        active = self.data.putBoolean("Activator",False)
-
+        self.shifter.set(1)
 
     def teleopPeriodic(self):
-        self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
-        self.elevatorMotor.set(self.coStick.getY())
-        ultra_value = self.ultra.getVoltage()
-        ultra_mv = ultra_value*1000
-        ultra_mm = (ultra_mv/4.883) * 5
-        ultra_ft = (ultra_mm/304.8)
-        self.data.putNumber("Ultrasonic", ultra_ft)
-        self.data.putString("Distance","{feet} feet".format(feet=ultra_ft))
-        stage_speed = self.data.getNumber("StageSpeed",0)
-        front_speed = self.data.getNumber("FrontSpeed",0)
-        rear_speed = self.data.getNumber("RearSpeed",0)
-        self.stagerMotor.set(stage_speed)
-        self.rearshootMotor.set(rear_speed)
-        self.frontshootMotor.set(front_speed)
-        if self.coStick.getRawButton(8):
-            self.climbMotor.set(1)
+        self.myRobot.tankDrive(-self.leftStick.getY(), self.rightStick.getY())
 
-        elif self.coStick.getRawButton(7):
+        limit = self.limitSwitch.get()
+
+        if self.coStick.getRawButton(1):
+            self.elevatorMotor.set(-self.coStick.getY(-.01))
+
+        if self.coStick.getRawButton(6):
             self.climbMotor.set(-1)
 
-        else:
-             self.climbMotor.set(0)
+        elif self.coStick.getRawButton(4):
+            self.climbMotor.set(1)
 
+        else:
+            self.climbMotor.set(0)
 
         if self.coStick.getRawButton(10):
             self.stagerMotor.set(1)
@@ -64,7 +55,7 @@ class MyRobot(magicbot.MagicRobot):
             self.stagerMotor.set(-1)
 
         else:
-             self.stagerMotor.set(0)
+            self.stagerMotor.set(0)
 
         if self.coStick.getRawButton(12):
             self.frontshootMotor.set(1)
@@ -73,19 +64,34 @@ class MyRobot(magicbot.MagicRobot):
             self.frontshootMotor.set(-1)
 
         else:
-             self.frontshootMotor.set(0)
+            self.frontshootMotor.set(0)
 
-        if self.coStick.getRawButton(1):
+        if self.coStick.getRawButton(8):
             self.rearshootMotor.set(1)
 
-        elif self.coStick.getRawButton(2):
+        elif self.coStick.getRawButton(7):
             self.rearshootMotor.set(-1)
 
         else:
-             self.rearshootMotor.set(0)
+            self.rearshootMotor.set(0)
 
-        wpilib.DriverStation.reportWarning(str(ultra_ft),False)
+        if self.coStick.getRawButton(1):
+            self.shooterTiltMotor.set(1)
+
+        elif self.coStick.getRawButton(2):
+            self.shooterTiltMotor.set(-1)
+        else:
+            self.shooterTiltMotor.set(0)
+
+        if self.leftStick.getRawButton(1):
+            if self.shifter.get() == 1:
+                self.shifter.set(2)
+            else:
+                self.shifter.set(1)
+
+        if self.coStick.getRawButton(4) == True and limit == True:
+            self.climbMotor.set(0)
 
 
 if __name__ == '__main__':
-	wpilib.run(MyRobot)
+    wpilib.run(MyRobot)
