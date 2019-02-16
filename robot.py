@@ -1,12 +1,13 @@
 import magicbot
+from components import Loader, ShooterControl
 import wpilib
 from wpilib.drive import DifferentialDrive
 from robotpy_ext.control.button_debouncer import ButtonDebouncer
-from networktables import NetworkTables
 
 
 class MyRobot(magicbot.MagicRobot):
-
+    loader = Loader.Loader
+    shooter_control = ShooterControl.ShooterControl
     def createObjects(self):
         self.leftStick = wpilib.Joystick(0)
         self.rightStick = wpilib.Joystick(1)
@@ -15,18 +16,21 @@ class MyRobot(magicbot.MagicRobot):
         self.leftMotor = wpilib.Victor(0)
         self.rightMotor = wpilib.Victor(1)
         self.climbMotor = wpilib.Victor(2)
-        self.stagerMotor = wpilib.Victor(3)
-        self.frontshootMotor = wpilib.Victor(4)
+        self.stager_motor = wpilib.Victor(3)
+        self.shooter_motor = wpilib.Victor(4)
         self.rearshootMotor = wpilib.Victor(5)
         self.elevatorMotor = wpilib.Victor(6)
         self.shooterTiltMotor = wpilib.Victor(7)
         self.myRobot = DifferentialDrive(self.leftMotor, self.rightMotor)
-
+        # self.pdp = wpilib.PowerDistributionPanel(0)
+        self.shooter_motor.setInverted(True)
+        self.stager_motor.setInverted(True)
         self.shifter = wpilib.DoubleSolenoid(0, 1)
         self.trigger = ButtonDebouncer(self.rightStick, 1, period=.5)
         self.shifter.set(1)
 
-        self.limitSwitch = wpilib.DigitalInput(9)
+        self.climbLimitSwitch = wpilib.DigitalInput(8)
+        self.ball_center = wpilib.DigitalInput(9)
 
     def teleopInit(self):
         self.shifter.set(1)
@@ -34,7 +38,8 @@ class MyRobot(magicbot.MagicRobot):
     def teleopPeriodic(self):
         self.myRobot.tankDrive(-self.leftStick.getY(), self.rightStick.getY())
 
-        limit = self.limitSwitch.get()
+        climbStop = self.climbLimitSwitch.get()
+
 
         if self.coStick.getRawButton(1):
             self.elevatorMotor.set(-self.coStick.getY(-.01))
@@ -48,23 +53,8 @@ class MyRobot(magicbot.MagicRobot):
         else:
             self.climbMotor.set(0)
 
-        if self.coStick.getRawButton(10):
-            self.stagerMotor.set(1)
-
-        elif self.coStick.getRawButton(9):
-            self.stagerMotor.set(-1)
-
-        else:
-            self.stagerMotor.set(0)
-
         if self.coStick.getRawButton(12):
-            self.frontshootMotor.set(1)
-
-        elif self.coStick.getRawButton(11):
-            self.frontshootMotor.set(-1)
-
-        else:
-            self.frontshootMotor.set(0)
+            self.shooter_control.fire()
 
         if self.coStick.getRawButton(8):
             self.rearshootMotor.set(1)
@@ -89,8 +79,20 @@ class MyRobot(magicbot.MagicRobot):
             else:
                 self.shifter.set(1)
 
-        if self.coStick.getRawButton(4) == True and limit == True:
+        if self.coStick.getRawButton(4) == True and climbStop == True:
             self.climbMotor.set(0)
+
+
+        if self.coStick.getRawButton(3):
+            self.loader.load()
+        else:
+            if not self.shooter_control.running():
+                self.loader.stop()
+
+
+
+
+
 
 
 if __name__ == '__main__':
