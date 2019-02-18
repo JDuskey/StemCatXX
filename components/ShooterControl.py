@@ -2,7 +2,7 @@ from magicbot import StateMachine, state, timed_state
 import wpilib
 import time
 class ShooterControl(StateMachine):
-    shooter_motor = wpilib.Victor
+    front_shooter_motor = wpilib.Victor
     stager_motor = wpilib.Victor
     isrunning = False
 
@@ -16,7 +16,7 @@ class ShooterControl(StateMachine):
 
     @timed_state(first=True, duration=.4,next_state='firing', must_finish=True)
     def spin_up_shooter(self):
-        self.shooter_motor.set(1)
+        self.front_shooter_motor.set(1)
 
     @timed_state(duration=1, next_state='end', must_finish=True)
     def firing(self):
@@ -25,6 +25,6 @@ class ShooterControl(StateMachine):
     @timed_state(duration=.2,must_finish=True)
     def end(self):
         self.isrunning = False
-        self.shooter_motor.set(0)
+        self.front_shooter_motor.set(0)
         self.stager_motor.set(0)
 
