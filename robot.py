@@ -33,11 +33,12 @@ class MyRobot(magicbot.MagicRobot):
         self.shifter = wpilib.DoubleSolenoid(0, 0, 1)
         self.trigger = ButtonDebouncer(self.rightStick, 1, period=.5)
         self.shifter.set(2)
-        # self.skis = wpilib.DoubleSolenoid(6, 7)
+        self.skis = wpilib.DoubleSolenoid(4, 5)
         self.launcherRotate = wpilib.AnalogInput(0)
         self.climbLimitSwitch = wpilib.DigitalInput(8)
         self.ball_center = wpilib.DigitalInput(9)
         self.elevator_limit = wpilib.DigitalInput(7)
+        self.pins = wpilib.DoubleSolenoid(2,3)
         # self.climbMotor.setInverted(True)
         self.tilt_limit = wpilib.DigitalInput(6)
         self.tilt_controller = wpilib.PIDController(4,0,0, self.launcherRotate, self.shooterTiltMotor)
@@ -51,15 +52,17 @@ class MyRobot(magicbot.MagicRobot):
         self.elevator_controller.setOutputRange(-1,.25)
         self.elevator_controller.setPercentTolerance(10)
         self.stager_running = False
+        self.gears = wpilib.DoubleSolenoid(6,7)
     def teleopInit(self):
-        # self.shifter.set(2)
-        # self.skis.set(2)
+        self.shifter.set(2)
+        self.skis.set(2)
+        self.gears.set(1)
+
         # if self.elevator_limit == False:
         #     self.elevatorMotor.set(.5)
         self.elevator_controller.disable()
         self.tilt_controller.enable()
         self.tilt_controller.setSetpoint(3.55)
-        pass
     def teleopPeriodic(self):
         self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
         # controlY = 2 * ((self.controlBoard.getY() - 0) / (.1181 - 0)) - 1
@@ -70,7 +73,7 @@ class MyRobot(magicbot.MagicRobot):
         # else:
         #     self.elevatorMotor.set(0)
 
-        if self.rightStick.getRawButton(3):
+        if self.rightStick.getRawButton(5):
             self.tilt_controller.enable()
             self.tilt_controller.setSetpoint(2.55)
             #Comp bot 2.55
@@ -99,13 +102,13 @@ class MyRobot(magicbot.MagicRobot):
         #         self.front_shooter_motor.set(0)
         #         self.stager_motor.set(0)
         #
-        if self.rightStick.getRawButton(5):
+        if self.rightStick.getRawButton(3):
             self.tilt_controller.enable()
             self.tilt_controller.setSetpoint(3.65)
             #Comp bot 3.65
             #comp bot 3.55
         #
-        #
+
         # if self.tilt_limit.get() == True:
         #     if self.tilt_controller.isEnabled():
         #         if self.tilt_controller.get() < 0:
@@ -171,7 +174,7 @@ class MyRobot(magicbot.MagicRobot):
 
         if self.coStick.getRawButton(10):
             self.elevator_controller.enable()
-            self.elevator_controller.setSetpoint(-3000)
+            self.elevator_controller.setSetpoint(-3040)
 
         if self.coStick.getRawButton(11):
             self.elevator_controller.setSetpoint(0)
@@ -182,29 +185,73 @@ class MyRobot(magicbot.MagicRobot):
 
         if self.coStick.getRawButton(8):
             self.elevator_controller.enable()
+            self.elevator_controller.setSetpoint(-5358)
+
+        if self.coStick.getRawButton(12):
+            self.elevator_controller.enable()
+            self.elevator_controller.setSetpoint(-725)
+
+        if self.coStick.getRawButton(3):
+            self.elevator_controller.enable()
             self.elevator_controller.setSetpoint(-1038)
+
+        if self.coStick.getRawButton(5):
+            self.elevator_controller.enable()
+            self.elevator_controller.setSetpoint(-1753)
 
         if self.elevator_limit.get():
             self.elevator_encoder.reset()
 
-        if self.rightStick.getRawButton(5):
-            self.tilt_controller.setSetpoint(3.55)
+        # if self.rightStick.getRawButton(3):
+        #     self.tilt_controller.setSetpoint(3.55)
 
-        # if self.rightStick.getTrigger():
-        #     self.shifter.set(1)
-        # else:
-        #     self.shifter.set(2)
-        #
-        # if self.coStick.getRawButton(6):
-        #     self.climbMotor.set(1)
-        #
-        # elif self.coStick.getRawButton(4):
-        #     self.climbMotor.set(-1)
-        #
-        # else:
-        #     self.climbMotor.set(0)
+        if self.rightStick.getRawButton(4):
+            self.tilt_controller.setSetpoint(3.7)
+        if self.tilt_limit.get() == True:
+            pass
+        if self.rightStick.getTrigger():
+            self.shifter.set(2)
+        else:
+            self.shifter.set(1)
+
+        if self.coStick.getTrigger():
+            self.shooter_control.fire()
+        if self.coStick.getRawButton(2):
+            if self.ball_center.get() == True:
+                self.front_shooter_motor.set(-1)
+
+            else:
+                self.front_shooter_motor.set(0)
+        else:
+            if not self.shooter_control.running():
+                self.front_shooter_motor.set(0)
 
 
+        if self.coStick.getRawButton(4):
+            self.climbMotor.set(1)
+
+        elif self.coStick.getRawButton(6):
+            self.climbMotor.set(-1)
+
+        else:
+            self.climbMotor.set(0)
+
+        if self.leftStick.getRawButton(12):
+            self.skis.set(2)
+        if self.leftStick.getRawButton(11):
+            self.skis.set(1)
+
+        if self.leftStick.getTrigger():
+            self.gears.set(2)
+        if self.leftStick.getRawButton(2):
+            self.gears.set(1)
+
+        if self.leftStick.getRawButton(7):
+            self.pins.set(1)
+        try:
+            self.sd.putNumber("PID OUTPUT", self.tilt_controller.get())
+        except:
+            pass
 
 if __name__ == '__main__':
     wpilib.run(MyRobot)
