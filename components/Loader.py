@@ -15,7 +15,6 @@ class Loader(StateMachine):
 
     def stop(self):
         self.front_shooter_motor.set(0)
-        self.rear_shooter_motor.set(0)
         self.is_running = False
     def running(self):
         return self.is_running
@@ -25,14 +24,12 @@ class Loader(StateMachine):
     @state(first=True)
     def load_ball(self):
         self.front_shooter_motor.set(-.5)
-        self.rear_shooter_motor.set(-.5)
         if self.check_for_ball():
             self.next_state_now('end')
 
     @timed_state(duration=.1,must_finish=True)
     def end(self):
         self.front_shooter_motor.set(0)
-        self.rear_shooter_motor.set(0)
         self.is_running = False
 
 
