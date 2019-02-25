@@ -1,7 +1,8 @@
 import wpilib
-class Shooter:
-    front_shooter_motor = wpilib.Victor
-    shoot_speed = 1.0
+class Loader:
+    frontShooterMotor = wpilib.Victor
+    ball_center = wpilib.DigitalInput
+    shoot_speed = -1.0
 
     def __init__(self):
         self.enabled = False
@@ -10,8 +11,8 @@ class Shooter:
         self.enabled = True
 
     def execute(self):
-        if self.enabled:
-            self.front_shooter_motor.set(self.shoot_speed)
+        if self.enabled and self.ball_center == True:
+            self.frontShooterMotor.set(self.shoot_speed)
         else:
-            self.front_shooter_motor.set(0)
+            self.frontShooterMotor.set(0)
         self.enabled = False
