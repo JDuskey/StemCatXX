@@ -4,6 +4,11 @@ class Loader(StateMachine):
     frontShooterMotor = wpilib.Victor
     ball_center = wpilib.DigitalInput
     is_running = False
+    stagerMotor = wpilib.Victor
+
+    def intake(self):
+        self.stagerMotor.set(-1)
+
     def check_for_ball(self):
         if not self.ball_center.get():
             return True

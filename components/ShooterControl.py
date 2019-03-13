@@ -20,7 +20,7 @@ class ShooterControl(StateMachine):
 
     @timed_state(duration=1, next_state='end', must_finish=True)
     def firing(self):
-        self.stagerMotor.set(-1)
+        self.stagerMotor.set(-.5)
 
     @timed_state(duration=.2,must_finish=True)
     def end(self):
