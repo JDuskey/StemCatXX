@@ -18,11 +18,11 @@ class ReverseShooterControl(StateMachine):
     def spin_up_shooter(self):
         self.frontShooterMotor.set(1)
 
-    @timed_state(duration=1, next_state='end', must_finish=True)
+    @timed_state(duration=2, next_state='end', must_finish=True)
     def firing(self):
-        self.stagerMotor.set(.5)
+        self.stagerMotor.set(.4)
 
-    @timed_state(duration=.2,must_finish=True)
+    @timed_state(duration=.4,must_finish=True)
     def end(self):
         self.isrunning = False
         self.frontShooterMotor.set(0)

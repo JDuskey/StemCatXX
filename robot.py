@@ -16,6 +16,7 @@ class MyRobot(magicbot.MagicRobot):
         self.reverse_stager_used = False
         self.leftStick = wpilib.Joystick(0)
         self.rightStick = wpilib.Joystick(1)
+        self.ll = NetworkTables.getTable("limelight")
         self.controlPanel = wpilib.Joystick(5)
         self.leftMotor = wpilib.Victor(0)
         self.rightMotor = wpilib.Victor(1)
@@ -52,6 +53,7 @@ class MyRobot(magicbot.MagicRobot):
         self.tilt_disabled = True
         self.punchers.set(2)
         self.skis.set(2)
+
         self.gears.set(1)
         self.tilt_disabled = True
         self.controlPanel.setOutputs(False)
@@ -63,7 +65,7 @@ class MyRobot(magicbot.MagicRobot):
             self.controlPanel.setOutput(2, True)
         else:
             self.controlPanel.setOutput(2, False)
-        self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
+
 
         # if self.controlPanel.getRawButton(8) == True:
         #     drivable = False
@@ -74,31 +76,28 @@ class MyRobot(magicbot.MagicRobot):
         if self.controlPanel.getRawButton(14):
             if self.ball_center.get() == True:
                         self.stager_used = True
-                        self.frontShooterMotor.set(-.9)
+                        self.frontShooterMotor.set(-.7)
                         self.stagerMotor.set(-.2)#-.2
             else:
                 if not self.reverse_shooter_control.running() or not self.reverse_shooter_control().isrunning:
                     if not self.reverse_stager_used:
-                        self.stagerMotor.set(0)
-                        self.frontShooterMotor.set(0)
+                        if not self.leftStick.getRawButton(4) == True or not self.leftStick.getRawButton(6) == True:
+                            self.stagerMotor.set(0)
+                            self.frontShooterMotor.set(0)
         else:
             self.stager_used = False
             if self.shooter_control.running() or self.reverse_shooter_control.running() or self.reverse_stager_used:
                 pass
             else:
-                self.frontShooterMotor.set(0)
-                self.stagerMotor.set(0)
+                if not self.leftStick.getRawButton(4) == True or not self.leftStick.getRawButton(6) == True:
+                    self.frontShooterMotor.set(0)
+                    self.stagerMotor.set(0)
 
         if self.leftStick.getRawButton(4):
             if self.ball_center.get() == True:
                         self.stager_used = True
                         self.frontShooterMotor.set(.9)
                         self.stagerMotor.set(.8)#-.2
-            else:
-                if not self.reverse_shooter_control.running() or not self.reverse_shooter_control().isrunning:
-                    if not self.reverse_stager_used:
-                        self.stagerMotor.set(0)
-                        self.frontShooterMotor.set(0)
 
 
         if self.leftStick.getRawButton(6):
@@ -107,12 +106,28 @@ class MyRobot(magicbot.MagicRobot):
                         self.stager_used = True
                         self.frontShooterMotor.set(-.9)
                         self.stagerMotor.set(-.8)#-.2
-            else:
-                if not self.reverse_shooter_control.running() or not self.reverse_shooter_control().isrunning:
-                    if not self.reverse_stager_used:
-                        self.stagerMotor.set(0)
-                        self.frontShooterMotor.set(0)
 
+        if self.rightStick.getRawButton(4):
+            tx = self.ll.getNumber("tx", 0)
+            ta = self.ll.getNumber("ta", 0)
+            kp = .3
+            heading_error = -tx
+            steering_adjust = 0.0
+            if tx > .5:
+                steering_adjust = kp * heading_error + .05
+            elif tx < -.5:
+                steering_adjust = kp * heading_error - .05
+            steering_adjust = round(steering_adjust, 2)
+            distance_adjust = kp * (ta - 1.2)
+            wpilib.DriverStation.reportWarning(str(steering_adjust), False)
+            self.myRobot.arcadeDrive(distance_adjust, -steering_adjust)
+            if ta < 1.2:
+                if tx > -1 and tx < 1:
+                    self.myRobot.arcadeDrive(.4,0)
+            #self.myRobot.arcadeDrive(-self.rightStick.getY(), 0)
+
+        else:
+            self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
 
         if self.rightStick.getRawButton(3):
             self.reverse_stager_used = True
