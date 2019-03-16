@@ -9,7 +9,8 @@ class MyRobot(magicbot.MagicRobot):
     reverse_shooter_control = ReverseShooterControl.ReverseShooterControl
     sd = NetworkTables.getTable('SmartDashboard')
     use_teleop_in_autonomous = True
-
+    kp = .03
+    drivekP = .26
 
     def createObjects(self):
         self.stager_used = False
@@ -65,13 +66,9 @@ class MyRobot(magicbot.MagicRobot):
             self.controlPanel.setOutput(2, True)
         else:
             self.controlPanel.setOutput(2, False)
+        tx = self.ll.getNumber("tx", 0)
+        ta = self.ll.getNumber("ta", 0)
 
-
-        # if self.controlPanel.getRawButton(8) == True:
-        #     drivable = False
-        #
-        # else:
-        #     drivable = True
 
         if self.controlPanel.getRawButton(14):
             if self.ball_center.get() == True:
@@ -108,23 +105,12 @@ class MyRobot(magicbot.MagicRobot):
                         self.stagerMotor.set(-.8)#-.2
 
         if self.rightStick.getRawButton(4):
-            tx = self.ll.getNumber("tx", 0)
-            ta = self.ll.getNumber("ta", 0)
-            kp = .3
-            heading_error = -tx
-            steering_adjust = 0.0
-            if tx > .5:
-                steering_adjust = kp * heading_error + .05
-            elif tx < -.5:
-                steering_adjust = kp * heading_error - .05
-            steering_adjust = round(steering_adjust, 2)
-            distance_adjust = kp * (ta - 1.2)
-            wpilib.DriverStation.reportWarning(str(steering_adjust), False)
-            self.myRobot.arcadeDrive(distance_adjust, -steering_adjust)
-            if ta < 1.2:
-                if tx > -1 and tx < 1:
-                    self.myRobot.arcadeDrive(.4,0)
-            #self.myRobot.arcadeDrive(-self.rightStick.getY(), 0)
+            steering_adjust = self.kp * tx
+            distance_adjust = self.drivekP * (1.2 - ta)
+
+
+            self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
+
 
         else:
             self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
