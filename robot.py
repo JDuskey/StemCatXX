@@ -9,11 +9,12 @@ class MyRobot(magicbot.MagicRobot):
     reverse_shooter_control = ReverseShooterControl.ReverseShooterControl
     sd = NetworkTables.getTable('SmartDashboard')
     use_teleop_in_autonomous = True
-    kp = .03
-    drivekP = .26
+    kp = .15
+    drivekP = 1.23
 
     def createObjects(self):
         self.stager_used = False
+        # self.pdp = wpilib.PowerDistributionPanel()
         self.reverse_stager_used = False
         self.leftStick = wpilib.Joystick(0)
         self.rightStick = wpilib.Joystick(1)
@@ -40,12 +41,12 @@ class MyRobot(magicbot.MagicRobot):
         self.pins = wpilib.DoubleSolenoid(2,3)
         self.pins.set(2)
         self.tilt_limit = wpilib.DigitalInput(6)
-        self.tilt_controller = wpilib.PIDController(4,0,0, self.launcherRotate, self.shooterTiltMotor)
+        self.tilt_controller = wpilib.PIDController(3.66,0,0, self.launcherRotate, self.shooterTiltMotor)
         #                 #Practice bot(4,0,0)
         #                 #Comp bot(4,0,0)
         self.tilt_controller.setPercentTolerance(5)
         self.elevator_encoder = wpilib.Encoder(0, 1)
-        self.elevator_controller = wpilib.PIDController(.008, 0, .005, self.elevator_encoder, self.elevatorMotor)
+        self.elevator_controller = wpilib.PIDController(.0025, 0, .001, self.elevator_encoder, self.elevatorMotor)
         #                 #practice bot(0.008,0,0.005)
         #                #Comp bot(.0025,0,.001)
         self.elevator_controller.setOutputRange(-1,.44)
@@ -54,7 +55,7 @@ class MyRobot(magicbot.MagicRobot):
         self.tilt_disabled = True
         self.punchers.set(2)
         self.skis.set(2)
-
+        self.oldtx = 0
         self.gears.set(1)
         self.tilt_disabled = True
         self.controlPanel.setOutputs(False)
@@ -62,6 +63,17 @@ class MyRobot(magicbot.MagicRobot):
     def teleopInit(self):
         pass
     def teleopPeriodic(self):
+        targethistory = []
+        targettotal = 0
+        targetcount = 0
+
+        for t in targethistory:
+            targetcount += 1
+            targettotal += t
+        if targetcount > 10:
+            targethistory=[]
+        if targetcount == 0:
+            targetcount = 1
         if self.elevator_controller.onTarget():
             self.controlPanel.setOutput(2, True)
         else:
@@ -76,7 +88,7 @@ class MyRobot(magicbot.MagicRobot):
                         self.frontShooterMotor.set(-.7)
                         self.stagerMotor.set(-.2)#-.2
             else:
-                if not self.reverse_shooter_control.running() or not self.reverse_shooter_control().isrunning:
+                if not self.reverse_shooter_control.running():
                     if not self.reverse_stager_used:
                         if not self.leftStick.getRawButton(4) == True or not self.leftStick.getRawButton(6) == True:
                             self.stagerMotor.set(0)
@@ -104,35 +116,62 @@ class MyRobot(magicbot.MagicRobot):
                         self.frontShooterMotor.set(-.9)
                         self.stagerMotor.set(-.8)#-.2
 
-        if self.rightStick.getRawButton(4):
-            steering_adjust = self.kp * tx
-            distance_adjust = self.drivekP * (1.2 - ta)
 
-
-            self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
-
-
-        else:
-            self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
 
         if self.rightStick.getRawButton(3):
-            self.reverse_stager_used = True
-            if self.ball_center.get() == True:
-                        self.stager_used = True
-                        self.frontShooterMotor.set(1)
-                        self.stagerMotor.set(1)
-            else:
-                if not self.reverse_shooter_control.running() or not self.reverse_shooter_control().isrunning:
-                    if not self.stager_used:
-                        self.stagerMotor.set(0)
-                        self.frontShooterMotor.set(0)
-        else:
-            self.reverse_stager_used = False
-            if self.shooter_control.running() or self.reverse_shooter_control.running() or self.stager_used:
+            self.ll.putNumber('pipeline', 1)
+            tv = self.ll.getNumber('tv', 0)
+            if tv > 0:
+                if self.ball_center.get() == True:
+                    self.stager_used = True
+                    self.frontShooterMotor.set(-.9)
+                    self.stagerMotor.set(-.8)  # -.2
+                steering_adjust = self.kp * tx
+                distance_adjust = self.drivekP * (1.9 - ta)
+                if distance_adjust > .75:
+                    distance_adjust = .75
+                if ta >= 1.21:
+                    self.tilt_controller.setSetpoint(3.4)
+                    self.ll.putNumber('pipeline',0)
+                self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
+
+
+        elif self.rightStick.getRawButton(5):
+            self.ll.putNumber('pipeline', 1)
+            tv = self.ll.getNumber('tv', 0)
+            tx = tx + .85
+            if tv > 0:
+                steering_adjust = self.kp * tx
+                distance_adjust = self.drivekP * (1.2 - ta)
+
+                if distance_adjust > .65:
+                    distance_adjust = .65
+
+
+                self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
+
+        elif self.rightStick.getRawButton(4):
+            self.ll.putNumber('pipeline', 1)
+            tv = self.ll.getNumber('tv', 0)
+            if tx > (targettotal / targetcount) + 3:
                 pass
-            else:
-                self.frontShooterMotor.set(0)
-                self.stagerMotor.set(0)
+            elif tx < (targettotal / targetcount) - 3:
+                pass
+            targethistory.append(tx)
+            if tv > 0:
+                steering_adjust = self.kp * tx + .3
+                distance_adjust = self.drivekP * (1.5 - ta)
+
+                if distance_adjust > .65:
+                    distance_adjust = .65
+
+
+                self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
+        else:
+            self.ll.putNumber('pipeline', 0)
+            self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
+
+
 
 
         if not self.controlPanel.getRawButton(5):
@@ -186,7 +225,7 @@ class MyRobot(magicbot.MagicRobot):
             if self.controlPanel.getRawButton(8):
                 self.tilt_disabled = False
                 self.tilt_controller.enable()
-                self.tilt_controller.setSetpoint(2.4)#2.49 comp
+                self.tilt_controller.setSetpoint(2.49)#2.49 comp
 
         if self.controlPanel.getRawButton(9):
              if not self.climb_raise_limitswitch.get():
@@ -231,7 +270,7 @@ class MyRobot(magicbot.MagicRobot):
             if self.controlPanel.getRawButton(5):
                 self.elevator_controller.enable()
                 if not self.controlPanel.getRawButton(3):
-                    self.elevator_controller.setSetpoint(-5320)  ##5220 comp, 5320 practice##
+                    self.elevator_controller.setSetpoint(-5360)  ##5220 comp, 5320 practice##
                 else:
                     self.elevator_controller.setSetpoint(-4843)
 
@@ -267,6 +306,8 @@ class MyRobot(magicbot.MagicRobot):
         if self.leftStick.getRawButton(8):
             self.pins.set(2)
 
-
+        # if self.pdp.getCurrent(15) > 2:
+        #     self.tilt_controller.disable()
+        #     self.ti.set(0)
 if __name__ == '__main__':
     wpilib.run(MyRobot)
