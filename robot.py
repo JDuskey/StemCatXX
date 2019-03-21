@@ -79,7 +79,7 @@ class MyRobot(magicbot.MagicRobot):
         else:
             self.controlPanel.setOutput(2, False)
         tx = self.ll.getNumber("tx", 0)
-        ta = self.ll.getNumber("ta", 0)
+        ta = self.ll.getNumber("-ta", 0)
 
 
         if self.controlPanel.getRawButton(14):
@@ -119,7 +119,7 @@ class MyRobot(magicbot.MagicRobot):
 
 
         if self.rightStick.getRawButton(3):
-            self.ll.putNumber('pipeline', 1)
+            self.ll.putNumber('pipeline', 0)
             tv = self.ll.getNumber('tv', 0)
             if tv > 0:
                 if self.ball_center.get() == True:
@@ -132,14 +132,14 @@ class MyRobot(magicbot.MagicRobot):
                     distance_adjust = .75
                 if ta >= 1.21:
                     self.tilt_controller.setSetpoint(3.4)
-                    self.ll.putNumber('pipeline',0)
+                    self.ll.putNumber('pipeline',1)
                 self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
 
 
         elif self.rightStick.getRawButton(5):
-            self.ll.putNumber('pipeline', 1)
+            self.ll.putNumber('pipeline', 0)
             tv = self.ll.getNumber('tv', 0)
-            tx = tx + .85
+            tx = tx + .8
             if tv > 0:
                 steering_adjust = self.kp * tx
                 distance_adjust = self.drivekP * (1.2 - ta)
@@ -151,7 +151,7 @@ class MyRobot(magicbot.MagicRobot):
                 self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
 
         elif self.rightStick.getRawButton(4):
-            self.ll.putNumber('pipeline', 1)
+            self.ll.putNumber('pipeline', 0)
             tv = self.ll.getNumber('tv', 0)
             if tx > (targettotal / targetcount) + 3:
                 pass
@@ -168,7 +168,7 @@ class MyRobot(magicbot.MagicRobot):
 
                 self.myRobot.arcadeDrive(distance_adjust, steering_adjust)
         else:
-            self.ll.putNumber('pipeline', 0)
+            self.ll.putNumber('pipeline', 1)
             self.myRobot.tankDrive(-self.leftStick.getY(), -self.rightStick.getY())
 
 
