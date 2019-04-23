@@ -14,13 +14,13 @@ class ShooterControl(StateMachine):
     def running(self):
         return self.isrunning
 
-    @timed_state(first=True, duration=.4,next_state='firing', must_finish=True)
+    @timed_state(first=True, duration=0,next_state='firing', must_finish=True)
     def spin_up_shooter(self):
         self.frontShooterMotor.set(-1)
 
     @timed_state(duration=1, next_state='end', must_finish=True)
     def firing(self):
-        self.stagerMotor.set(-.5)
+        self.stagerMotor.set(-1)
 
     @timed_state(duration=.2,must_finish=True)
     def end(self):
